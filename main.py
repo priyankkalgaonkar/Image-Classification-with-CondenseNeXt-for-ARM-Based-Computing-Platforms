@@ -12,10 +12,10 @@ import warnings
 import models
 from utils import convert_model, measure_model
 
-parser = argparse.ArgumentParser(description='PyTorch Condensed Convolutional Networks')
+parser = argparse.ArgumentParser(description='PyTorch CondenseNeXt')
 parser.add_argument('data', metavar='DIR',
                     help='path to dataset')
-parser.add_argument('--model', default='condensenet', type=str, metavar='M',
+parser.add_argument('--model', default='condensenext', type=str, metavar='M',
                     help='model to train the dataset')
 parser.add_argument('-j', '--workers', default=8, type=int, metavar='N',
                     help='number of data loading workers (default: 4)')
@@ -284,7 +284,7 @@ def train(train_loader, model, criterion, optimizer, epoch):
     model.train()
     ### Find all learned convs to prepare for group lasso loss
     for m in model.modules():
-        if m.__str__().startswith('LearnedGroupConv'):
+        if m.__str__().startswith('PK_DW_Conv'):
             learned_module_list.append(m)
     running_lr = None
 
@@ -477,7 +477,7 @@ def accuracy(output, target, topk=(1,)):
 
     res = []
     for k in topk:
-        correct_k = correct[:k].view(-1).float().sum(0)
+        correct_k = correct[:k].reshape(-1).float().sum(0)
         res.append(correct_k.mul_(100.0 / batch_size))
     return res
 

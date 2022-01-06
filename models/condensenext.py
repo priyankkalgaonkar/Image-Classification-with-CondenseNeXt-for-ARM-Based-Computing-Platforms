@@ -5,21 +5,22 @@ from __future__ import division
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.autograd import Variable
 import math
-from layers import ShuffleLayer, Conv, CondenseConv, CondenseLinear
+from layers import Conv, PK_Dw_Conv
 
-__all__ = ['CondenseNet']
+__all__ = ['CondenseNext']
 
 class _DenseLayer(nn.Module):
     def __init__(self, in_channels, growth_rate, args):
         super(_DenseLayer, self).__init__()
         self.group_1x1 = args.group_1x1
         self.group_3x3 = args.group_3x3
-        ### 1x1 conv i --> b*k
-        self.conv_1 = CondenseConv(in_channels, args.bottleneck * growth_rate,
-                                   kernel_size=1, groups=self.group_1x1)
-        ### 3x3 conv b*k-->k
+        inter_planes = args.bottleneck * growth_rate * 4
+        self.conv_1 = PK_Dw_Conv(in_channels, args.bottleneck * growth_rate,
+                                      3,1,1,0,2,8)
+        self.droprate = 0
         self.conv_2 = Conv(args.bottleneck * growth_rate, growth_rate,
                            kernel_size=3, padding=1, groups=self.group_3x3)
 
@@ -48,10 +49,10 @@ class _Transition(nn.Module):
         return x
 
 
-class CondenseNet(nn.Module):
+class CondenseNeXt(nn.Module):
     def __init__(self, args):
 
-        super(CondenseNet, self).__init__()
+        super(CondenseNeXt, self).__init__()
 
         self.stages = args.stages
         self.growth = args.growth
@@ -78,8 +79,8 @@ class CondenseNet(nn.Module):
             ### Dense-block i
             self.add_block(i)
         ### Linear layer
-        self.classifier = CondenseLinear(self.num_features, args.num_classes,
-                                         0.5)
+        self.classifier = nn.Linear(self.num_features, args.num_classes)
+
         ### initialize
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -90,6 +91,7 @@ class CondenseNet(nn.Module):
                 m.bias.data.zero_()
             elif isinstance(m, nn.Linear):
                 m.bias.data.zero_()
+        return
 
     def add_block(self, i):
         ### Check if ith is the last one
@@ -110,11 +112,13 @@ class CondenseNet(nn.Module):
             self.features.add_module('norm_last',
                                      nn.BatchNorm2d(self.num_features))
             self.features.add_module('relu_last',
-                                     nn.ReLU(inplace=True))
+                                     nn.ReLU6(inplace=True))
             self.features.add_module('pool_last',
                                      nn.AvgPool2d(self.pool_size))
 
-    def forward(self, x, progress=None):
+    def forward(self, x, progress=30.1):
+        if progress:
+            PK_Dw_Conv.global_progress = progress
         features = self.features(x)
         out = features.view(features.size(0), -1)
         out = self.classifier(out)

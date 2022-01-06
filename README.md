@@ -25,8 +25,8 @@ DOI: 10.1109/IEMTRONICS52119.2021.9422541
 
 ### Dependencies
 
-- [Python3](https://www.python.org/downloads/)
-- [PyTorch ver. 1.1.0](http://pytorch.org)
+- [Python 3.8.10](https://www.python.org/downloads/)
+- [PyTorch ver. 1.9.0](http://pytorch.org)
 - [CIFAR-10 and CIFAR-100](https://www.cs.toronto.edu/~kriz/cifar.html)
 - [ImageNet](https://www.image-net.org/challenges/LSVRC/2012/)
 - [RTMaps Studio ver. 4.8.0](https://intempora.com/products/rtmaps/)
